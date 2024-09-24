@@ -7,8 +7,6 @@ COPY crontab.properties /etc/crontabs/root
 RUN touch /var/log/cron.log && \
   chmod 666 /var/log/cron.log
 
-RUN ls -hal /var/log/cron.log && sleep 2
-
 WORKDIR /home/node
 
 # Application setup
