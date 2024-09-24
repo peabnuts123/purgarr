@@ -1,0 +1,15 @@
+name: purgarr
+
+services:
+  purgarr:
+    build: .
+    container_name: purgarr
+    env_file: .env
+    volumes:
+      # Timezone
+      - '/etc/localtime:/etc/localtime:ro'
+      # Application code
+      - ./src:/home/node/src:ro
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped

@@ -1,0 +1,25 @@
+{
+  "name": "purgarr",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "node --import @swc-node/register/esm-register --import=extensionless/register src/index",
+    "typecheck": "tsc"
+  },
+  "author": "peabnuts123",
+  "license": "UNLICENSED",
+  "extensionless": {
+    "lookFor": [
+      "ts",
+      "js"
+    ]
+  },
+  "dependencies": {
+    "@swc-node/register": "^1.9.1",
+    "@swc/cli": "^0.3.12",
+    "extensionless": "^1.9.9",
+    "dotenv": "^16.4.5"
+  }
+}
