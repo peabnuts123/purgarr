@@ -1,7 +1,11 @@
 import { Config } from './config';
 import { log, throwIfNotOkay } from './util';
 
-export async function getTag(tagName: string) {
+/**
+ * Fetch the full DTO of a tag, by name.
+ * @param tagName Name of the tag to look up.
+ */
+export async function getTag(tagName: string): Promise<SonarrTag> {
   const response = await fetch(`${Config.Sonarr.BaseUri}/api/v3/tag`, {
     method: 'GET',
     headers: {
@@ -21,6 +25,9 @@ export async function getTag(tagName: string) {
   return tag;
 }
 
+/**
+ * Get all TV series from the Sonarr API
+ */
 export async function getSeries(): Promise<TvSeries[]> {
   const response = await fetch(`${Config.Sonarr.BaseUri}/api/v3/series`, {
     method: 'GET',
@@ -34,6 +41,11 @@ export async function getSeries(): Promise<TvSeries[]> {
   return await response.json() as TvSeries[];
 }
 
+/**
+ * Get all the episodes of a TV series. These are present in Sonarr
+ * whether they have been downloaded or not.
+ * @param seriesId ID of the TV series to query.
+ */
 export async function getAllEpisodes(seriesId: number): Promise<Episode[]> {
   const response = await fetch(`${Config.Sonarr.BaseUri}/api/v3/episode?seriesId=${seriesId}`, {
     method: 'GET',
@@ -47,6 +59,10 @@ export async function getAllEpisodes(seriesId: number): Promise<Episode[]> {
   return await response.json() as Episode[];
 }
 
+/**
+ * Get all the episode files associated with a TV series.
+ * @param seriesId ID of the TV series to query.
+ */
 export async function getAllEpisodeFiles(seriesId: number): Promise<EpisodeFile[]> {
   const response = await fetch(`${Config.Sonarr.BaseUri}/api/v3/episodefile?seriesId=${seriesId}`, {
     method: 'GET',
@@ -60,6 +76,11 @@ export async function getAllEpisodeFiles(seriesId: number): Promise<EpisodeFile[
   return await response.json() as EpisodeFile[];
 }
 
+/**
+ * Mark a batch of episodes as monitored/unmonitored.
+ * @param episodeIds Array of Episode IDs to update.
+ * @param monitored The monitored status to set.
+ */
 export async function setEpisodesMonitored(episodeIds: number[], monitored: boolean): Promise<void> {
   if (Config.DryRun) return;
 
@@ -80,6 +101,10 @@ export async function setEpisodesMonitored(episodeIds: number[], monitored: bool
   await throwIfNotOkay(response, `Failed to set monitored status for episodes`);
 }
 
+/**
+ * Delete a batch of episode files from disk.
+ * @param episodeFileIds IDs of episode files to delete.
+ */
 export async function deleteEpisodeFiles(episodeFileIds: number[]): Promise<void> {
   if (Config.DryRun) return;
 
@@ -99,6 +124,9 @@ export async function deleteEpisodeFiles(episodeFileIds: number[]): Promise<void
   await throwIfNotOkay(response, `Failed to delete episode files`);
 }
 
+/**
+ * Run the purge against Sonarr.
+ */
 export async function purgeSeries() {
   const exclusionTag = await getTag(Config.Sonarr.ExclusionTagName);
   const allSeries = await getSeries();
@@ -141,6 +169,8 @@ export async function purgeSeries() {
   await deleteEpisodeFiles(deletedEpisodeIds);
 }
 
+// @NOTE Types are non-exhaustive. They only have the properties that are actually used on them.
+
 interface SonarrTag {
   id: number;
   label: string;
@@ -152,6 +182,10 @@ interface TvSeries {
   tags: number[];
 }
 
+/**
+ * An episode of a TV series in Sonarr.
+ * Represents the entry in Sonarr, not the file on disk.
+ */
 interface Episode {
   id: number;
   episodeFileId: number | undefined;
@@ -160,6 +194,9 @@ interface Episode {
   title: string;
 }
 
+/**
+ * The physical file on a disk for an Episode.
+ */
 interface EpisodeFile {
   id: number;
   dateAdded: string;

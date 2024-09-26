@@ -1,7 +1,11 @@
 import { Config } from './config';
 import { log, throwIfNotOkay } from './util';
 
-export async function getTag(tagName: string) {
+/**
+ * Fetch the full DTO of a tag, by name.
+ * @param tagName Name of the tag to look up.
+ */
+export async function getTag(tagName: string): Promise<RadarrTag> {
   const response = await fetch(`${Config.Radarr.BaseUri}/api/v3/tag`, {
     method: 'GET',
     headers: {
@@ -21,6 +25,9 @@ export async function getTag(tagName: string) {
   return tag;
 }
 
+/**
+ * Get all movies from the Radarr API.
+ */
 export async function getMovies(): Promise<RadarrMovie[]> {
   const response = await fetch(`${Config.Radarr.BaseUri}/api/v3/movie`, {
     method: 'GET',
@@ -34,6 +41,10 @@ export async function getMovies(): Promise<RadarrMovie[]> {
   return await response.json() as RadarrMovie[];
 }
 
+/**
+ * Delete a movie using the Radarr API.
+ * @param movieId ID of the movie to delete.
+ */
 export async function deleteMovie(movieId: number): Promise<void> {
   if (Config.DryRun) return;
 
@@ -47,6 +58,9 @@ export async function deleteMovie(movieId: number): Promise<void> {
   await throwIfNotOkay(response, `Failed to delete movie`);
 }
 
+/**
+ * Run the purge against Radarr.
+ */
 export async function purgeMovies() {
   const exclusionTag = await getTag(Config.Radarr.ExclusionTagName);
   const movies = await getMovies();
@@ -72,6 +86,8 @@ export async function purgeMovies() {
 
   log(`Deleted ${deleteCount} movies`);
 }
+
+// @NOTE Types are non-exhaustive. They only have the properties that are actually used on them.
 
 interface RadarrTag {
   id: number;

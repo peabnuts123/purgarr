@@ -1,3 +1,8 @@
+/**
+ * Utility function for throwing a consistent error if a fetch request failed.
+ * @param response Fetch response.
+ * @param errorMessage Error to throw if the response was a failure.
+ */
 export async function throwIfNotOkay(response: Response, errorMessage: string) {
   if (!response.ok) {
     const responseBody = await response.text();
