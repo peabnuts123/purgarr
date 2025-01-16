@@ -6,7 +6,7 @@ export const Config = {
    * In this mode the application runs as normal, but no destructive actions
    * are taken.
    */
-  DryRun: Boolean(optionalEnv(`DRY_RUN`, `true`)),
+  DryRun: optionalEnv(`DRY_RUN`, `true`) !== "false", // @NOTE Safely default to `true` unless the string is exactly 'false'
   /**
    * Max age (as a number of days) that content can be before it is deleted.
    */
