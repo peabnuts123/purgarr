@@ -7,8 +7,6 @@ if (Config.DryRun) {
   log(`=================`);
   logWarning("NOTE: 'Config.DryRun' is enabled - Logs will appear destructive but NO actions will be taken");
   log(`=================`);
-} else {
-  throw new Error(`Wet run not yet allowed.`)
 }
 
 log();
