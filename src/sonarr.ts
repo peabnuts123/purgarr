@@ -108,20 +108,37 @@ export async function setEpisodesMonitored(episodeIds: number[], monitored: bool
 export async function deleteEpisodeFiles(episodeFileIds: number[]): Promise<void> {
   if (Config.DryRun) return;
 
-  const payload = {
-    episodeFileIds,
-  };
+  const PAGE_SIZE = 5;
+  const NumPages = Math.ceil(episodeFileIds.length / PAGE_SIZE);
+  console.log(`[DEBUG] [Sonarr] (deleteEpisodeFiles) (episodeFileIds.length='${episodeFileIds.length}') (NumPages='${NumPages}')`);
+  for (let i = 0; i < NumPages; i++) {
+	const pageStart = i * PAGE_SIZE;
+	const pageEnd = (i + 1) * PAGE_SIZE;
+	const payload = {
+	  episodeFileIds: episodeFileIds.slice(pageStart, pageEnd), 
+	}	  
+	console.log(`[DEBUG] [Sonarr] (deleteEpisodeFiles) Page ${i} range: (${pageStart}, ${pageEnd})`, payload);
+ 	const response = await fetch(`${Config.Sonarr.BaseUri}/api/v3/episodefile/bulk`, {
+    		method: 'DELETE',
+    		body: JSON.stringify(payload),
+    		headers: {
+      			'X-Api-Key': Config.Sonarr.ApiKey,
+      			'Content-Type': 'application/json',
+    		}
+  	});
 
-  const response = await fetch(`${Config.Sonarr.BaseUri}/api/v3/episodefile/bulk`, {
-    method: 'DELETE',
-    body: JSON.stringify(payload),
-    headers: {
-      'X-Api-Key': Config.Sonarr.ApiKey,
-      'Content-Type': 'application/json',
-    }
-  });
+	try {
+  		await throwIfNotOkay(response, `Failed to delete episode files`);
+	} catch (e) {
+		if ('message' in e && /Expected query to return \d+ rows but returned \d+/.test(e.message)) {
+			console.warn(`WARN: Ignoring failed request for episode files. Something wrong with Sonarr?`, e);
+		} else {
+			throw e;
+		}
+	}
 
-  await throwIfNotOkay(response, `Failed to delete episode files`);
+	await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
 }
 
 /**
@@ -132,6 +149,7 @@ export async function purgeSeries() {
   const allSeries = await getSeries();
 
   const deletedEpisodeIds: number[] = [];
+  const deletedEpisodeFileIds: number[] = [];
   for (const series of allSeries) {
     log(`Processing TV series: "${series.title}"...`);
 
@@ -156,6 +174,7 @@ export async function purgeSeries() {
           log(`PURGING TV episode: "${episode.title}" (id: ${episode.id}) (episodeFileId='${episodeFile.id}') (series='${series.title}') (seasonNumber='${episode.seasonNumber}') (episodeNumber='${episode.episodeNumber}') Age: ${~~episodeFileAgeDays} days`);
 
           deletedEpisodeIds.push(episode.id);
+	  deletedEpisodeFileIds.push(episodeFile.id);
         } else {
           log(`Keeping TV episode: "${episode.title}" (id: ${episode.id}) (episodeFileId='${episodeFile.id}') (series='${series.title}') (seasonNumber='${episode.seasonNumber}') (episodeNumber='${episode.episodeNumber}') Age: ${~~episodeFileAgeDays} days`);
         }
@@ -166,7 +185,7 @@ export async function purgeSeries() {
   log(`Deleted ${deletedEpisodeIds.length} TV episodes`);
 
   await setEpisodesMonitored(deletedEpisodeIds, false);
-  await deleteEpisodeFiles(deletedEpisodeIds);
+  await deleteEpisodeFiles(deletedEpisodeFileIds);
 }
 
 // @NOTE Types are non-exhaustive. They only have the properties that are actually used on them.
