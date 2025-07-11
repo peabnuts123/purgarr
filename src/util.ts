@@ -9,6 +9,21 @@ export async function throwIfNotOkay(response: Response, errorMessage: string) {
     throw new Error(`${errorMessage}: ${response.statusText}\n${responseBody}`);
   }
 }
+/**
+ * Utility function for removing duplicates from an array.
+ * @param values Array of values to remove duplicates from.
+ */
+export function removeDuplicates<T>(values: T[]): T[] {
+  const result: T[] = [];
+
+  for (const value of values) {
+    if (!result.includes(value)) {
+      result.push(value);
+    }
+  }
+
+  return result;
+}
 
 export function log(...values: any[]): void {
   console.log(`[${new Date().toLocaleString()}] `, ...values);

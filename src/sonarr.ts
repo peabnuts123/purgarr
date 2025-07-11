@@ -1,5 +1,5 @@
 import { Config } from './config';
-import { log, throwIfNotOkay } from './util';
+import { log, removeDuplicates, throwIfNotOkay } from './util';
 
 /**
  * Fetch the full DTO of a tag, by name.
@@ -112,32 +112,32 @@ export async function deleteEpisodeFiles(episodeFileIds: number[]): Promise<void
   const NumPages = Math.ceil(episodeFileIds.length / PAGE_SIZE);
   console.log(`[DEBUG] [Sonarr] (deleteEpisodeFiles) (episodeFileIds.length='${episodeFileIds.length}') (NumPages='${NumPages}')`);
   for (let i = 0; i < NumPages; i++) {
-	const pageStart = i * PAGE_SIZE;
-	const pageEnd = (i + 1) * PAGE_SIZE;
-	const payload = {
-	  episodeFileIds: episodeFileIds.slice(pageStart, pageEnd), 
-	}	  
-	console.log(`[DEBUG] [Sonarr] (deleteEpisodeFiles) Page ${i} range: (${pageStart}, ${pageEnd})`, payload);
- 	const response = await fetch(`${Config.Sonarr.BaseUri}/api/v3/episodefile/bulk`, {
-    		method: 'DELETE',
-    		body: JSON.stringify(payload),
-    		headers: {
-      			'X-Api-Key': Config.Sonarr.ApiKey,
-      			'Content-Type': 'application/json',
-    		}
-  	});
+    const pageStart = i * PAGE_SIZE;
+    const pageEnd = (i + 1) * PAGE_SIZE;
+    const payload = {
+      episodeFileIds: episodeFileIds.slice(pageStart, pageEnd),
+    }
+    console.log(`[DEBUG] [Sonarr] (deleteEpisodeFiles) Page ${i} range: (${pageStart}, ${pageEnd})`, payload);
+    const response = await fetch(`${Config.Sonarr.BaseUri}/api/v3/episodefile/bulk`, {
+      method: 'DELETE',
+      body: JSON.stringify(payload),
+      headers: {
+        'X-Api-Key': Config.Sonarr.ApiKey,
+        'Content-Type': 'application/json',
+      }
+    });
 
-	try {
-  		await throwIfNotOkay(response, `Failed to delete episode files`);
-	} catch (e) {
-		if ('message' in e && /Expected query to return \d+ rows but returned \d+/.test(e.message)) {
-			console.warn(`WARN: Ignoring failed request for episode files. Something wrong with Sonarr?`, e);
-		} else {
-			throw e;
-		}
-	}
+    try {
+      await throwIfNotOkay(response, `Failed to delete episode files`);
+    } catch (e) {
+      if ('message' in e && /Expected query to return \d+ rows but returned \d+/.test(e.message)) {
+        console.warn(`WARN: Ignoring failed request for episode files. Something wrong with Sonarr?`, e);
+      } else {
+        throw e;
+      }
+    }
 
-	await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   }
 }
 
@@ -174,7 +174,7 @@ export async function purgeSeries() {
           log(`PURGING TV episode: "${episode.title}" (id: ${episode.id}) (episodeFileId='${episodeFile.id}') (series='${series.title}') (seasonNumber='${episode.seasonNumber}') (episodeNumber='${episode.episodeNumber}') Age: ${~~episodeFileAgeDays} days`);
 
           deletedEpisodeIds.push(episode.id);
-	  deletedEpisodeFileIds.push(episodeFile.id);
+          deletedEpisodeFileIds.push(episodeFile.id);
         } else {
           log(`Keeping TV episode: "${episode.title}" (id: ${episode.id}) (episodeFileId='${episodeFile.id}') (series='${series.title}') (seasonNumber='${episode.seasonNumber}') (episodeNumber='${episode.episodeNumber}') Age: ${~~episodeFileAgeDays} days`);
         }
@@ -184,8 +184,8 @@ export async function purgeSeries() {
 
   log(`Deleted ${deletedEpisodeIds.length} TV episodes`);
 
-  await setEpisodesMonitored(deletedEpisodeIds, false);
-  await deleteEpisodeFiles(deletedEpisodeFileIds);
+  await setEpisodesMonitored(removeDuplicates(deletedEpisodeIds), false);
+  await deleteEpisodeFiles(removeDuplicates(deletedEpisodeFileIds));
 }
 
 // @NOTE Types are non-exhaustive. They only have the properties that are actually used on them.
